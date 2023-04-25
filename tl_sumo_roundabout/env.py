@@ -10,7 +10,7 @@ import traci
 from sumo_gym.envs.roundabout import RoundaboutEnv
 from sumo_gym.envs.types import InfoDict, ObsDict
 from tl_sumo_roundabout.automaton import Automaton
-from tl_sumo_roundabout.conversion import tl2rob
+from tl_sumo_roundabout.conversion import state2rob, tl2rob
 
 from tl_sumo_roundabout.types import (
     AtomFormulaDict,
@@ -96,7 +96,7 @@ class TlRoundaboutEnv(RoundaboutEnv):
                 VarProp(
                     "d_ego_goal",
                     ["ego_pos"],
-                    lambda x, y: abs(x[0] - self.destination_x),
+                    lambda x: abs(x[0] - self.destination_x),
                 ),
                 VarProp(
                     "s_others",
@@ -204,7 +204,9 @@ class TlRoundaboutEnv(RoundaboutEnv):
         reward (float): reward of the step based on the MDP and automaton states.
         next_aut_state (int): the resultant automaton state
         """
-        atom_formula_dict: RobDict = self._get_info()
+        atom_formula_dict: RobDict = state2rob(
+            self._get_obs(), self.var_props, self.atom_formula_dict
+        )
         aut = self.aut
         curr_aut_state = self.current_aut_state
 
@@ -311,3 +313,54 @@ class TlRoundaboutEnv(RoundaboutEnv):
                 non_trap_robs.append(rob)
 
         return robs, non_trap_robs, trap_robs
+
+
+def create_env(
+    env_name: str,
+    tl_spec: str,
+    num_actions: int,
+    max_steps: int,
+    config_path: str,
+    step_length: float = 0.1,
+    sumo_options: list[str] = [
+        "--collision.check-junctions",
+        "true",
+        "--collision.action",
+        "warn",
+        "--emergencydecel.warning-threshold",
+        "1000.1",
+    ],
+    max_ego_speed: float = 10,
+    ego_aware_dist: float = 100,
+    ego_speed_mode: int = 32,
+    others_speed_mode: int = 32,
+    sumo_gui_binary: str = "/usr/bin/sumo-gui",
+    sumo_binary: str = "/usr/bin/sumo",
+    sumo_init_state_save_path: str = "out/sumoInitState.xml",
+    atom_formula_dict: AtomFormulaDict | None = None,
+    var_props: list[VarProp] | None = None,
+    destination_x: float | None = -10,
+    is_gui_rendered: bool = False,
+) -> TlRoundaboutEnv:
+    env = TlRoundaboutEnv(
+        env_name,
+        tl_spec,
+        num_actions,
+        max_steps,
+        config_path,
+        step_length,
+        sumo_options,
+        max_ego_speed,
+        ego_aware_dist,
+        ego_speed_mode,
+        others_speed_mode,
+        sumo_gui_binary,
+        sumo_binary,
+        sumo_init_state_save_path,
+        atom_formula_dict,
+        var_props,
+        destination_x,
+        is_gui_rendered,
+    )
+
+    return env
