@@ -27,7 +27,7 @@ step_length: float = 0.5
 ego_aware_dist: float = 200.0
 others_speed_mode: int = 32
 
-num_replicates: int = 3
+num_replicates: int = 5
 total_timesteps: int = 40_000
 num_envs: int = 1
 gpu: str = "cuda:0"
