@@ -25,7 +25,7 @@ from tl_sumo_roundabout.types import (
 class TlRoundaboutEnv(RoundaboutEnv):
     def __init__(
         self,
-        name: str,
+        env_name: str,
         tl_spec: str,
         num_actions: int,
         max_steps: int,
@@ -67,7 +67,7 @@ class TlRoundaboutEnv(RoundaboutEnv):
             is_gui_rendered,
         )
 
-        self.name = name
+        self.env_name = env_name
         self.tl_spec: str = tl_spec
         self.destination_x = destination_x if destination_x is not None else -10
 
@@ -75,9 +75,10 @@ class TlRoundaboutEnv(RoundaboutEnv):
             atom_formula_dict
             if atom_formula_dict is not None
             else {
-                "psi_a": "d_ego_others > 5",
-                "psi_b": "d_ego_goal < 5",
-                "psi_c": "s_others < 1",
+                "psi_a": "d_ego_goal < 5",
+                "psi_b": "d_ego_others > 10",
+                "psi_c": "d_ego_others > 4",
+                "psi_d": "s_others < 1",
             }
         )
 
