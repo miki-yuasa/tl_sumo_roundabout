@@ -30,7 +30,7 @@ def plot_results(
     x_orig, y_orig = ts2xy(load_results(log_folder), "timesteps")
     y = moving_average(y_orig, window=window)
     # Truncate x
-    x = x_orig[len(x_orig) - len(y_orig) :]
+    x = x_orig[len(x_orig) - len(y) :]
 
     fig = plt.figure()
     plt.plot(x, y)
