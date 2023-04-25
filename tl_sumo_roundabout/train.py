@@ -58,7 +58,7 @@ def train_rl_agent(
     eval_callback = SaveOnBestTrainingRewardCallback(check_freq=500, log_dir=log_path)
 
     model = PPO("MultiInputPolicy", env_monitored, verbose=True, seed=seed)
-    model.learn(total_timesteps)
+    model.learn(total_timesteps, callback=eval_callback)
     model.save(rl_model_path)
     lc = plot_results(log_path, learning_curve_path, window)
     eval_env.close()
