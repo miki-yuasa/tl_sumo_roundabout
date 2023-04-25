@@ -1,3 +1,4 @@
+import os
 from numpy import ndarray
 
 from matplotlib import pyplot as plt
@@ -24,9 +25,14 @@ window: int = round(total_timesteps / 100)
 lc_plot_max_x: int = 900
 
 model_path: str = f"out/model/model_{spec2title(spec)}_{experiment}"
+model_paths: list[str] = [f"{model_path}_{i}" for i in range(num_replicates)]
 learning_curve_path: str = (
     f"out/learning_curve/learning_curve_{spec2title(spec)}_{experiment}.png"
 )
+learning_curve_paths: list[str] = [
+    f"out/learning_curve/learning_curve_{spec2title(spec)}_{experiment}_{i}.png"
+    for i in range(num_replicates)
+]
 
 sns.set(style="whitegrid")
 plt.rcParams["font.family"] = "Times New Roman"
@@ -34,18 +40,27 @@ plt.rcParams["font.family"] = "Times New Roman"
 lcs: list[tuple[ndarray, ndarray]] = []
 
 for i in range(num_replicates):
-    seed: int = 3406 + i
-    print(f"Training model {i+1}/{num_replicates}...")
-    env = create_env(
-        env_name,
-        spec,
-        num_actions,
-        max_steps,
-        config_path,
-        ego_aware_dist=ego_aware_dist,
-        others_speed_mode=others_speed_mode,
-    )
-    model, lc = train_rl_agent(
-        env, num_envs, seed, total_timesteps, model_path, learning_curve_path, window
-    )
-    print(f"Model {i+1}/{num_replicates} trained.")
+    if os.path.exists(model_paths[i]):
+        print(f"Model {i+1}/{num_replicates} already trained. Skipping...")
+    else:
+        seed: int = 3406 + i
+        print(f"Training model {i+1}/{num_replicates}...")
+        env = create_env(
+            env_name,
+            spec,
+            num_actions,
+            max_steps,
+            config_path,
+            ego_aware_dist=ego_aware_dist,
+            others_speed_mode=others_speed_mode,
+        )
+        model, lc = train_rl_agent(
+            env,
+            num_envs,
+            seed,
+            total_timesteps,
+            model_paths[i],
+            learning_curve_paths[i],
+            window,
+        )
+        print(f"Model {i+1}/{num_replicates} trained.")
