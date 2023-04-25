@@ -55,19 +55,29 @@ def plot_ablation(
     y_min: ndarray = np.amin(Y_interp, axis=0)
     y_max: ndarray = np.amax(Y_interp, axis=0)
     y_mean: ndarray = np.mean(Y_interp, axis=0)
+    y_min_ave = moving_average(y_min, window)
+    y_max_ave = moving_average(y_max, window)
+    y_mean_ave = moving_average(y_mean, window)
+
+    min_y_len = np.min([len(y_min_ave), len(y_max_ave), len(y_mean_ave)])
+    max_y_len = np.max([len(y_min_ave), len(y_max_ave), len(y_mean_ave)])
+    y_min_ave = y_min_ave[len(y_min_ave) - min_y_len :]
+    y_max_ave = y_max_ave[len(y_max_ave) - min_y_len :]
+    y_mean_ave = y_mean_ave[len(y_mean_ave) - min_y_len :]
+    xvals = xvals[len(xvals) - min_y_len :]
 
     fig, ax = plt.subplots()
 
     ax.fill_between(
         xvals,
-        moving_average(y_min, window),
-        moving_average(y_max, window),
+        y_min_ave,  # moving_average(y_min, window),
+        y_max_ave,  # moving_average(y_max, window),
         alpha=0.2,
         color="b",
     )
     ax.plot(
         xvals,
-        moving_average(y_mean, window),
+        y_mean_ave,  # moving_average(y_mean, window),
         color="b",
     )
 
