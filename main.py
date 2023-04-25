@@ -3,6 +3,7 @@ import pickle
 
 import numpy as np
 from numpy import ndarray
+import torch
 from matplotlib import pyplot as plt
 import seaborn as sns
 from stable_baselines3 import PPO
@@ -91,7 +92,8 @@ for i in range(num_replicates):
         )
         print(f"Model {i+1}/{num_replicates} trained.")
 
-plot_ablation(lcs, learning_curve_path, lc_plot_max_x, window)
+    lcs.append(lc)
+plot_ablation(lcs, learning_curve_path, lc_plot_max_x, 500)
 
 # Simulate a trained model
 env = create_env(
@@ -113,9 +115,10 @@ t_0_speeds: list[float] = []
 t_1_speeds: list[float] = []
 
 for obs in obs_list:
-    ego_speeds.append(obs["ego_speed"])
-    t_0_speeds.append(obs["t_0_speed"])
-    t_1_speeds.append(obs["t_1_speed"])
+    ego_speeds.append(float(obs["ego_speed"]))
+    t_0_speeds.append(float(obs["t_0_speed"]))
+    t_1_speeds.append(float(obs["t_1_speed"]))
+
 
 t = [i * step_length for i in range(len(obs_list))]
 
@@ -128,6 +131,7 @@ ax.set_ylabel("Vehicle Speed [m/s]")
 ax.legend()
 fig.savefig(simulation_traj_plot_path, dpi=600)
 
+
 # Collect success rates
 
 success_rates: list[float] = []
@@ -136,6 +140,9 @@ for i in range(num_replicates):
     success_rate: int = 0
 
     for j in range(num_success_rate_simulation):
+        print(
+            f"Simulation {j+1}/{num_success_rate_simulation} of replicate {i+1}/{num_replicates}..."
+        )
         env = create_env(
             env_name,
             spec,
