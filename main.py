@@ -1,10 +1,13 @@
 import os
-from numpy import ndarray
+import pickle
 
+import numpy as np
+from numpy import ndarray
 from matplotlib import pyplot as plt
 import seaborn as sns
 from stable_baselines3 import PPO
-import torch
+
+
 from tl_sumo_roundabout.evaluation import simulate_mode
 from tl_sumo_roundabout.plot import plot_ablation
 
@@ -49,6 +52,8 @@ simulation_traj_plot_path: str = (
     f"out/plot/trajectory/trajectory_{spec2title(spec)}_{experiment}.png"
 )
 
+num_success_rate_simulation: int = 1000
+
 sns.set(style="whitegrid")
 plt.rcParams["font.family"] = "Times New Roman"
 
@@ -60,6 +65,8 @@ lcs: list[tuple[ndarray, ndarray]] = []
 for i in range(num_replicates):
     if os.path.exists(model_paths[i] + ".zip"):
         print(f"Model {i+1}/{num_replicates} already trained. Skipping...")
+        with open(learning_curve_paths[i] + "_reward.pickle", "rb") as f:
+            lc = pickle.load(f)
     else:
         seed: int = 3406 + i
         print(f"Training model {i+1}/{num_replicates}...")
@@ -73,7 +80,7 @@ for i in range(num_replicates):
             ego_aware_dist=ego_aware_dist,
             others_speed_mode=others_speed_mode,
         )
-        model, lc = train_rl_agent(
+        _, lc = train_rl_agent(
             env,
             num_envs,
             seed,
@@ -120,3 +127,34 @@ ax.set_xlabel("Time [s]")
 ax.set_ylabel("Vehicle Speed [m/s]")
 ax.legend()
 fig.savefig(simulation_traj_plot_path, dpi=600)
+
+# Collect success rates
+
+success_rates: list[float] = []
+
+for i in range(num_replicates):
+    success_rate: int = 0
+
+    for j in range(num_success_rate_simulation):
+        env = create_env(
+            env_name,
+            spec,
+            num_actions,
+            max_steps,
+            config_path,
+            step_length=step_length,
+            ego_aware_dist=ego_aware_dist,
+            others_speed_mode=others_speed_mode,
+        )
+        model = PPO.load(model_paths[i])
+        _, collided = simulate_mode(model, env)
+        if not collided:
+            success_rate += 1
+        else:
+            pass
+
+    success_rates.append(success_rate / num_success_rate_simulation)
+
+print(f"Success rates: {success_rates}")
+print(f"Mean success rate: {np.mean(success_rates)}")
+print(f"Std success rate: {np.std(success_rates)}")
