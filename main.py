@@ -53,7 +53,8 @@ simulation_traj_plot_path: str = (
     f"out/plot/trajectory/trajectory_{spec2title(spec)}_{experiment}.png"
 )
 
-num_success_rate_simulation: int = 1000
+skip_single_simulation: bool = True
+num_success_rate_simulation: int = 200
 
 sns.set(style="whitegrid")
 plt.rcParams["font.family"] = "Times New Roman"
@@ -96,41 +97,44 @@ for i in range(num_replicates):
 plot_ablation(lcs, learning_curve_path, lc_plot_max_x, 500)
 
 # Simulate a trained model
-env = create_env(
-    env_name,
-    spec,
-    num_actions,
-    max_steps,
-    config_path,
-    step_length=step_length,
-    ego_aware_dist=ego_aware_dist,
-    others_speed_mode=others_speed_mode,
-    is_gui_rendered=True,
-)
-model = PPO.load(simulation_model_path)
-obs_list, _ = simulate_mode(model, env, simulation_render_path)
+if not skip_single_simulation:
+    print("Simulating a trained model...")
+    env = create_env(
+        env_name,
+        spec,
+        num_actions,
+        max_steps,
+        config_path,
+        step_length=step_length,
+        ego_aware_dist=ego_aware_dist,
+        others_speed_mode=others_speed_mode,
+        is_gui_rendered=True,
+    )
+    model = PPO.load(simulation_model_path)
+    obs_list, _ = simulate_mode(model, env, simulation_render_path)
 
-ego_speeds: list[float] = []
-t_0_speeds: list[float] = []
-t_1_speeds: list[float] = []
+    ego_speeds: list[float] = []
+    t_0_speeds: list[float] = []
+    t_1_speeds: list[float] = []
 
-for obs in obs_list:
-    ego_speeds.append(float(obs["ego_speed"]))
-    t_0_speeds.append(float(obs["t_0_speed"]))
-    t_1_speeds.append(float(obs["t_1_speed"]))
+    for obs in obs_list:
+        ego_speeds.append(float(obs["ego_speed"]))
+        t_0_speeds.append(float(obs["t_0_speed"]))
+        t_1_speeds.append(float(obs["t_1_speed"]))
 
+    t = [i * step_length for i in range(len(obs_list))]
 
-t = [i * step_length for i in range(len(obs_list))]
+    fig, ax = plt.subplots()
+    ax.plot(t, ego_speeds, label="ego")
+    ax.plot(t, t_0_speeds, label="vehicle 0")
+    ax.plot(t, t_1_speeds, label="vehicle 1")
+    ax.set_xlabel("Time [s]")
+    ax.set_ylabel("Vehicle Speed [m/s]")
+    ax.legend()
+    fig.savefig(simulation_traj_plot_path, dpi=600)
 
-fig, ax = plt.subplots()
-ax.plot(t, ego_speeds, label="ego")
-ax.plot(t, t_0_speeds, label="vehicle 0")
-ax.plot(t, t_1_speeds, label="vehicle 1")
-ax.set_xlabel("Time [s]")
-ax.set_ylabel("Vehicle Speed [m/s]")
-ax.legend()
-fig.savefig(simulation_traj_plot_path, dpi=600)
-
+else:
+    print("Skipping single simulation...")
 
 # Collect success rates
 
